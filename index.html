@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Growknow: catch contradictions before you write the code</title>
+<meta name="description" content="A self-checking spec language for agent planning. Your agent reads a spec that can prove itself wrong, before any code exists.">
+<style>
+  :root { --ink:#0d0d0f; --paper:#fbfaf7; --muted:#6b6b73; --line:#e2ded6; --flag:#c2410c; --ok:#1f6f43; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font:16px/1.6 ui-sans-serif,-apple-system,"Helvetica Neue",Arial,sans-serif;
+         -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 24px; }
+  header { padding:26px 0; border-bottom:1px solid var(--line); }
+  header .wrap { display:flex; justify-content:space-between; align-items:baseline; }
+  .brand { font-weight:700; letter-spacing:-0.02em; font-size:19px; }
+  .brand span { color:var(--muted); font-weight:400; font-size:14px; margin-left:10px; }
+  header a { color:var(--ink); text-decoration:none; font-size:14px; border-bottom:1px solid var(--line); }
+  h1 { font-size:clamp(32px,5.2vw,54px); line-height:1.08; letter-spacing:-0.03em; margin:64px 0 18px; font-weight:700; }
+  .lede { font-size:clamp(17px,2.2vw,21px); color:#33333a; max-width:640px; margin:0 0 28px; }
+  .cta { display:inline-block; background:var(--ink); color:var(--paper); padding:13px 22px;
+         border-radius:6px; text-decoration:none; font-weight:600; font-size:15px; }
+  .cta.secondary { background:transparent; color:var(--ink); border:1px solid #c9c4ba; margin-left:10px; }
+  .meta { color:var(--muted); font-size:13.5px; margin-top:16px; }
+  section { padding:56px 0; border-top:1px solid var(--line); margin-top:56px; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin:0 0 22px; font-weight:600; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:36px; }
+  @media (max-width:760px){ .grid{grid-template-columns:1fr;} .cta.secondary{margin:12px 0 0;} }
+  .card h3 { font-size:17px; margin:0 0 6px; letter-spacing:-0.01em; }
+  .card p { margin:0; color:#45454d; font-size:15px; }
+  pre { background:#111114; color:#e8e6e1; padding:20px 22px; border-radius:8px; overflow-x:auto;
+        font:13px/1.65 ui-monospace,"SF Mono",Menlo,monospace; margin:0; }
+  .k { color:#8fb8ff; } .c { color:#7d7d88; } .bad { color:#ff8a5c; } .good { color:#7ddfa8; }
+  ol { padding-left:20px; margin:0; } ol li { margin-bottom:14px; color:#45454d; }
+  ol li b { color:var(--ink); }
+  footer { border-top:1px solid var(--line); padding:30px 0 60px; color:var(--muted); font-size:13.5px; }
+  footer a { color:var(--ink); }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand">Growknow <span>spec review before code</span></div>
+  <a href="mailto:rahul.tuladhar97@gmail.com?subject=Design%20partner">Talk to us</a>
+</div></header>
+
+<main class="wrap">
+  <h1>Catch contradictions<br>before you write the code.</h1>
+  <p class="lede">Growknow is a self-checking spec language. Your agent reads a plan that can prove itself wrong: two rules that cannot both hold, a permission that implies an impossible state, a migration that drops a field something still depends on.</p>
+  <a class="cta" href="mailto:rahul.tuladhar97@gmail.com?subject=Design%20partner">Request a design partner slot</a>
+  <a class="cta secondary" href="#how">How it works</a>
+  <p class="meta">Early access. Three to five teams, working directly with the people building it.</p>
+
+  <section>
+    <h2>The failure this catches</h2>
+<pre><span class="c"># billing.spec</span>
+<span class="k">entity</span> Seat { plan: Plan, status: active | past_due | cancelled }
+
+<span class="k">rule</span> access <span class="k">when</span> seat.status == cancelled   <span class="c">// line 12</span>
+  deny all endpoints
+
+<span class="k">invariant</span> past_due_seats_keep_access
+  seat.status == past_due <span class="k">implies</span> seat.can_read_data
+
+<span class="bad">▲ contradiction: archived export job (line 41) requires
+  cancelled seats to authenticate to finish the export.
+  line 12 denies authentication, so the export can never
+  complete. Two of these three statements must change.</span>
+
+<span class="c"># Prefers: keep the export, scope the deny to user sessions.</span>
+<span class="good">✓ 1 contradiction, 2 unresolved assumptions, 0 errors</span></pre>
+  </section>
+
+  <section id="how" class="grid">
+    <div class="card">
+      <h3>Spec, then code</h3>
+      <p>Write the plan in a format an agent can check. Annotations are optional per area, the way types are optional in TypeScript. Add rigor where the cost of being wrong is high.</p>
+    </div>
+    <div class="card">
+      <h3>Check, don't read</h3>
+      <p>The checker finds contradictions, unreachable states, and violations of earlier decisions. You get the line numbers and the reasoning, not a document nobody opens.</p>
+    </div>
+    <div class="card">
+      <h3>Runs where you work</h3>
+      <p>Ships as an MCP server and a CLI, so Claude Code, Cursor, and VS Code can call it before writing a line. The spec stays in your repo as grounding context.</p>
+    </div>
+    <div class="card">
+      <h3>Memory that argues back</h3>
+      <p>Decisions from months ago stay in the spec. When a new section contradicts them, the checker says which one, and when it was made.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Who it is for</h2>
+    <ol>
+      <li><b>Staff and senior engineers</b> at startups where shipping outruns review, and a wrong design costs a week.</li>
+      <li><b>Teams already using plan mode</b> who have watched a confident plan turn into a broken migration.</li>
+      <li><b>Anyone coordinating several agents</b> that need the same source of truth about the system.</li>
+    </ol>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  Growknow, San Francisco. <a href="mailto:rahul.tuladhar97@gmail.com">rahul.tuladhar97@gmail.com</a>
+</div></footer>
+</body>
+</html>
